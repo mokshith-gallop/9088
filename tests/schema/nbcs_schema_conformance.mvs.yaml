@@ -1119,6 +1119,7 @@ suites:
       - table: ods_agent_scd2
         source_table: ods_agent_scd2
         expect_object_type: TABLE
+        partition_by: eff_from_year
         cluster_by: [agent_id]
         columns:
           - { name: agent_history_id, type: STRING, source_type: STRING }
@@ -1136,6 +1137,7 @@ suites:
       - table: ods_agent_skill_scd2
         source_table: ods_agent_skill_scd2
         expect_object_type: TABLE
+        partition_by: eff_from_year
         cluster_by: [agent_id]
         columns:
           - { name: agent_skill_history_id, type: STRING, source_type: STRING }
@@ -1152,6 +1154,7 @@ suites:
       - table: ods_agent_assignment_scd2
         source_table: ods_agent_assignment_scd2
         expect_object_type: TABLE
+        partition_by: eff_from_year
         cluster_by: [agent_id]
         columns:
           - { name: assignment_history_id, type: STRING, source_type: STRING }
