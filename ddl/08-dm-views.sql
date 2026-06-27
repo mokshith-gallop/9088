@@ -8,7 +8,8 @@
 -- For production with 3 datasets, qualify with nbcs_staging/nbcs_ods/nbcs_dm.
 --
 -- Dialect translations applied:
---   vw_org_hierarchy            WITH RECURSIVE — native BQ (no change)
+--   vw_org_hierarchy            WITH RECURSIVE — drop column-alias list
+--                               (BQ infers CTE columns from anchor SELECT)
 --   vw_active_agents_ndv        NDV() → APPROX_COUNT_DISTINCT()
 --   vw_csat_rollup              GROUP BY…WITH ROLLUP + GROUPING__ID
 --                                → GROUP BY ROLLUP(…) + GROUPING() bitmask
@@ -26,8 +27,7 @@
 
 -- 1. Org hierarchy (recursive CTE — native BQ WITH RECURSIVE)
 CREATE VIEW IF NOT EXISTS vw_org_hierarchy AS
-WITH RECURSIVE org_tree (org_unit_id, unit_code, unit_name, unit_type,
-                         site_code, root_unit_id, depth, path_names) AS (
+WITH RECURSIVE org_tree AS (
   SELECT o.org_unit_id, o.unit_code, o.unit_name, o.unit_type,
          o.site_code, o.org_unit_id AS root_unit_id, 0 AS depth,
          o.unit_name AS path_names

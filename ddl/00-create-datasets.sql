@@ -12,6 +12,5 @@
 --   CREATE SCHEMA IF NOT EXISTS nbcs_dm      OPTIONS(location = 'US');
 -- ----------------------------------------------------------------------------
 
--- Intentionally empty: the harness manages dataset lifecycle for
--- build-and-verify runs.  For production, uncomment the three statements
--- above and run against the target GCP project.
+-- No-op: the harness manages dataset lifecycle for build-and-verify runs.
+SELECT 1;
