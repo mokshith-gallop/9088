@@ -26,6 +26,28 @@ SCHEMA = {
         "story_id": {"type": "string"},
         "target_dataset": {"type": "string"},
         "source_database": {"type": "string"},
+        # Stand up the legacy SOURCE tables (schema-only) before the source cross-check, for
+        # specs that have no pre-existing legacy DB. Seeded via the Hive write engine; the
+        # source cross-check then DESCRIBEs them. Each entry: a source table + its legacy cols.
+        "seed_source": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["table", "columns"],
+                "properties": {
+                    "table": {"type": "string"},
+                    "columns": {
+                        "type": "array", "minItems": 1,
+                        "items": {
+                            "type": "object", "required": ["name", "type"],
+                            "properties": {"name": {"type": "string"}, "type": {"type": "string"}},
+                            "additionalProperties": False,
+                        },
+                    },
+                },
+                "additionalProperties": False,
+            },
+        },
         "expect_table_count": {"type": "integer", "minimum": 0},
         "tables": {
             "type": "array",
@@ -82,8 +104,57 @@ SCHEMA = {
 _HIVE_MARKERS = ("SerDe Library", "InputFormat", "Location")
 
 
+def _seed_source_schema(ctx: Context, src_db: str, seeds: list[dict]) -> list[str]:
+    """Stand up the legacy SOURCE tables (schema-only) so the source cross-check has a live
+    source to DESCRIBE — for self-contained specs with no pre-existing legacy DB. Writes via
+    the Hive engine (the source's write path), then INVALIDATE METADATA so an Impala read
+    engine sees the new tables. Each seed declares the legacy table + its columns (source-
+    dialect types); rows are optional (the schema cross-check only needs the columns).
+    Returns the seeded table names so the caller can tear them down."""
+    from . import build
+    names: list[str] = []
+    for t in seeds:
+        build.seed_hs2(ctx.hive, src_db, t["table"], {"columns": t["columns"], "rows": t.get("rows", [])})
+        names.append(t["table"])
+    # Impala caches the metastore; make Hive-created tables visible to the read engine.
+    if ctx.source_kind == "impala":
+        ctx.source.query("INVALIDATE METADATA")
+    return names
+
+
+def _teardown_source_schema(ctx: Context, src_db: str, names: list[str]) -> None:
+    """Drop the seeded source tables (best-effort) so no test tables are left behind in the
+    customer's source_database — runs in a finally, pass OR fail. Stricter than the target's
+    reset-at-start default (which leaves dmt_build): the source isn't ours, so we always
+    clean up what we created."""
+    for name in names:
+        try:
+            ctx.hive.execute(f"DROP TABLE IF EXISTS {src_db}.{name}")
+        except Exception:  # noqa: BLE001 — teardown is best-effort; never mask the result
+            pass
+    if ctx.source_kind == "impala":
+        try:
+            ctx.source.query("INVALIDATE METADATA")
+        except Exception:  # noqa: BLE001
+            pass
+
+
 @register("schema_conformance", SCHEMA)
 def run(suite: dict, ctx: Context) -> SuiteResult:
+    # Optionally stand up the legacy source tables (schema-only) for the source cross-check,
+    # then ALWAYS tear them down (try/finally) — they live in the customer's source_database,
+    # so we never leave seeded test tables behind, whether the suite passes, fails, or errors.
+    src_db = suite.get("source_database")
+    seeded = (_seed_source_schema(ctx, src_db, suite["seed_source"])
+              if src_db and suite.get("seed_source") else [])
+    try:
+        return _run_conformance(suite, ctx)
+    finally:
+        if seeded:
+            _teardown_source_schema(ctx, src_db, seeded)
+
+
+def _run_conformance(suite: dict, ctx: Context) -> SuiteResult:
     require(ctx, "bigquery")
     sr = SuiteResult(pattern="schema_conformance", suite_id=suite.get("id", "schema_conformance"))
     story = suite.get("story_id")

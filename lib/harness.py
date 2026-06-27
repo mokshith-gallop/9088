@@ -103,13 +103,23 @@ def run_mvs(data: dict, base_dir: str = ".") -> Report:
         if build_ds is None:        # build failed -> report already carries the ERROR suite
             return report
 
+    # Optionally stand up the legacy source from its real DDL (sandbox-only, guarded by
+    # DMT_SOURCE_SETUP), so the source cross-check has a live source to read. No-op against a
+    # real legacy (no opt-in). Always torn down in the finally.
+    source_created = []
+    if data.get("source_setup"):
+        from . import build
+        source_created = build.setup_source(ctx, data["source_setup"], base_dir)
+
     try:
         for i, suite in enumerate(data.get("suites", [])):
             report.suites.append(_run_suite(suite, ctx, index=i, read_only=read_only))
     finally:
+        from . import build
         if build_ds and migration.get("isolate"):
-            from . import build
             build.teardown(ctx.target, build_ds)
+        if source_created:
+            build.teardown_source(ctx, source_created)
     return report
 
 

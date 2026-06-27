@@ -14,6 +14,8 @@ dataset (name must be `dmt_build` or `dmt_build_*` AND carry the dmt_ephemeral l
 """
 from __future__ import annotations
 
+import os
+import re
 from decimal import Decimal
 from pathlib import Path
 
@@ -21,6 +23,73 @@ from .mvs import expand_env
 
 BUILD_DS_DEFAULT = "dmt_build"
 LABEL_KEY = "dmt_ephemeral"
+
+# --- source_setup: stand up the legacy source from its real DDL, then tear it down -------
+# Lets schema_conformance's source cross-check run against a sandbox source built from the
+# legacy DDL (the agent lists the files it converted), WITHOUT a live legacy DB and WITHOUT
+# ever touching a real one. Guarded by an opt-in env var so it can only run on a sandbox.
+SOURCE_SETUP_ENV = "DMT_SOURCE_SETUP"          # set ONLY for sandbox/test sources
+# Any cluster URI under a LOCATION (hdfs://, s3://, abfs://, gs://, file://host…) that won't
+# resolve on the sandbox — rewritten to a local base so EXTERNAL tables can be created.
+_LEGACY_URI_RE = re.compile(r"\b[a-z0-9]+://[^/'\s]+/", re.I)
+_SETUP_COMMENT_RE = re.compile(r"/\*.*?\*/|--[^\n]*", re.S)   # Hive/Impala comments ('#' is not one)
+_CREATE_TABLE_RE = re.compile(r"CREATE\s+(?:EXTERNAL\s+|TEMPORARY\s+)*TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([`\w.]+)", re.I)
+_CREATE_DB_RE = re.compile(r"CREATE\s+(?:DATABASE|SCHEMA)\s+(?:IF\s+NOT\s+EXISTS\s+)?([`\w]+)", re.I)
+
+
+def _sanitize_source_ddl(sql: str, location_base: str) -> str:
+    """Make legacy DDL applyable to a sandbox: rewrite any cluster URI under LOCATION
+    (hdfs://host/…, s3://…) to a local sandbox base. Keeps EXTERNAL so the table stays
+    non-transactional — a managed table on Hive 3 is ACID, which Impala cannot read."""
+    return _LEGACY_URI_RE.sub(location_base.rstrip("/") + "/", sql)
+
+
+def _split_statements(sql: str) -> list[str]:
+    """Strip comments FIRST (a legacy comment may itself contain ';'), then split into
+    individual statements, dropping blank fragments."""
+    clean = _SETUP_COMMENT_RE.sub("", sql)
+    return [p.strip() for p in clean.split(";") if p.strip()]
+
+
+def setup_source(ctx, source_setup: dict, base_dir: str = ".") -> list[tuple[str, str]]:
+    """Apply the legacy source DDL files to an EPHEMERAL sandbox source so the source
+    cross-check has a live source to read. GUARDED: runs only when DMT_SOURCE_SETUP is set,
+    so it can never write to a real read-only legacy (no opt-in -> no-op, the real source is
+    used as-is). Writes via the Hive engine; INVALIDATE METADATA so an Impala read engine
+    sees the tables. Returns the created ('database'|'table', name) objects for teardown."""
+    if not os.environ.get(SOURCE_SETUP_ENV):
+        return []
+    location_base = source_setup.get("location_base", "/tmp/dmt_src")
+    created: list[tuple[str, str]] = []
+    for path in source_setup.get("ddl", []):
+        sql = _sanitize_source_ddl(expand_env((Path(base_dir) / path).read_text()), location_base)
+        for stmt in _split_statements(sql):
+            ctx.hive.execute(stmt)
+        created += [("database", m.group(1).strip("`")) for m in _CREATE_DB_RE.finditer(sql)]
+        created += [("table", m.group(1).strip("`")) for m in _CREATE_TABLE_RE.finditer(sql)]
+    if ctx.source_kind == "impala":
+        ctx.source.query("INVALIDATE METADATA")
+    return created
+
+
+def teardown_source(ctx, created: list[tuple[str, str]]) -> None:
+    """Drop everything setup_source created (best-effort, in a finally) — tables first, then
+    the databases (CASCADE). Nothing is left in the sandbox source, pass or fail."""
+    for _, name in [c for c in created if c[0] == "table"]:
+        try:
+            ctx.hive.execute(f"DROP TABLE IF EXISTS {name}")
+        except Exception:  # noqa: BLE001 — teardown is best-effort; never mask the result
+            pass
+    for _, name in [c for c in created if c[0] == "database"]:
+        try:
+            ctx.hive.execute(f"DROP DATABASE IF EXISTS {name} CASCADE")
+        except Exception:  # noqa: BLE001
+            pass
+    if ctx.source_kind == "impala":
+        try:
+            ctx.source.query("INVALIDATE METADATA")
+        except Exception:  # noqa: BLE001
+            pass
 LABEL_VAL = "true"
 
 # GCS bulk-load source formats accepted in a `kind: load` step.
