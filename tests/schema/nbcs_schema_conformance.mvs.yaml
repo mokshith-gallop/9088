@@ -1934,6 +1934,23 @@ suites:
       - { id: "smoke-agg_billing_monthly", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.agg_billing_monthly LIMIT 0" }
       - { id: "smoke-agg_site_daily", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.agg_site_daily LIMIT 0" }
 
+      # View smoke queries — AC7/AC8: every view must be queryable
+      - { id: "smoke-vw_org_hierarchy", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_org_hierarchy LIMIT 0" }
+      - { id: "smoke-vw_active_agents_ndv", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_active_agents_ndv LIMIT 0" }
+      - { id: "smoke-vw_csat_rollup", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_csat_rollup LIMIT 0" }
+      - { id: "smoke-vw_call_driver_regex", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_call_driver_regex LIMIT 0" }
+      - { id: "smoke-vw_repeat_contact_window", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_repeat_contact_window LIMIT 0" }
+      - { id: "smoke-vw_billing_reconciliation", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_billing_reconciliation LIMIT 0" }
+      - { id: "smoke-vw_agent_roster_current", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_agent_roster_current LIMIT 0" }
+      - { id: "smoke-vw_agent_scorecard", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_agent_scorecard LIMIT 0" }
+      - { id: "smoke-vw_attrition_risk", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_attrition_risk LIMIT 0" }
+      - { id: "smoke-vw_queue_sla_attainment", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_queue_sla_attainment LIMIT 0" }
+      - { id: "smoke-vw_first_contact_resolution", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_first_contact_resolution LIMIT 0" }
+      - { id: "smoke-vw_occupancy_utilization", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_occupancy_utilization LIMIT 0" }
+      - { id: "smoke-vw_shrinkage_analysis", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_shrinkage_analysis LIMIT 0" }
+      - { id: "smoke-vw_program_margin", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_program_margin LIMIT 0" }
+      - { id: "smoke-vw_client_executive_summary", mode: measure, sql: "SELECT * FROM `${BUILD_DATASET}`.vw_client_executive_summary LIMIT 0" }
+
       # Tier queries — test partition columns
       - { id: tier-staging, mode: measure,
           sql: "SELECT load_date, COUNT(*) AS n FROM `${BUILD_DATASET}`.stg_crm_client GROUP BY load_date" }
