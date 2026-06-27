@@ -1,0 +1,17 @@
+-- ----------------------------------------------------------------------------
+-- 00-create-datasets.sql
+-- NBCS warehouse — BigQuery dataset provisioning.
+--
+-- Production deployment: create the 3 NBCS datasets before applying any DDL.
+-- When run via the MVS harness (build-and-verify mode), the harness provisions
+-- the build dataset automatically — this file is a documentation placeholder.
+--
+-- For standalone deployment, execute against the target project:
+--   CREATE SCHEMA IF NOT EXISTS nbcs_staging OPTIONS(location = 'US');
+--   CREATE SCHEMA IF NOT EXISTS nbcs_ods     OPTIONS(location = 'US');
+--   CREATE SCHEMA IF NOT EXISTS nbcs_dm      OPTIONS(location = 'US');
+-- ----------------------------------------------------------------------------
+
+-- Intentionally empty: the harness manages dataset lifecycle for
+-- build-and-verify runs.  For production, uncomment the three statements
+-- above and run against the target GCP project.
