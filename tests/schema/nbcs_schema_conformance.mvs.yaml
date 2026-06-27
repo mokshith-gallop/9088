@@ -41,6 +41,20 @@ migration:
     - { kind: ddl, sql: ddl/07-dm-tables.sql }
     - { kind: ddl, sql: ddl/08-dm-views.sql }
 
+# Stand up the legacy source tables (schema-only) from the real Hive DDL so the
+# source cross-check has a live source to DESCRIBE. Sandbox-guarded by
+# DMT_SOURCE_SETUP env var — no-op against a real legacy DB.
+source_setup:
+  ddl:
+    - /workspace/source/hive/ddl/01-create-databases.hql
+    - /workspace/source/hive/ddl/02-staging-sqoop-mirrors.hql
+    - /workspace/source/hive/ddl/03-staging-delta-feeds.hql
+    - /workspace/source/hive/ddl/04-staging-file-feeds.hql
+    - /workspace/source/hive/ddl/05-ods-cleanse.hql
+    - /workspace/source/hive/ddl/06-ods-delta-scd2.hql
+    - /workspace/source/hive/ddl/07-ods-acid.hql
+    - /workspace/source/hive/ddl/08-dm-tables.hql
+
 suites:
   # ===========================================================================
   # Suite 1: Staging (45 tables)
@@ -64,7 +78,7 @@ suites:
           - { name: hq_country, type: STRING, source_type: STRING }
           - { name: status, type: STRING, source_type: STRING }
           - { name: created_ts, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: updated_ts, type: INT64, description: "epoch SECONDS (legacy)" }
+          - { name: updated_ts, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
           - { name: load_date, type: DATE }
 
       - table: stg_crm_client_contact
@@ -96,7 +110,7 @@ suites:
           - { name: site_code, type: STRING, source_type: STRING }
           - { name: status, type: STRING, source_type: STRING }
           - { name: go_live_ts, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: updated_ts, type: INT64, description: "epoch SECONDS (legacy)" }
+          - { name: updated_ts, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
           - { name: load_date, type: DATE }
 
       - table: stg_crm_contract
@@ -109,11 +123,11 @@ suites:
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: contract_no, type: STRING, source_type: STRING }
           - { name: start_dt, type: STRING, source_type: STRING, description: "Oracle string YYYYMMDDHH24MISS (legacy)" }
-          - { name: end_dt, type: STRING, description: "Oracle string YYYYMMDDHH24MISS (legacy)" }
-          - { name: billing_model, type: STRING }
-          - { name: currency, type: STRING }
-          - { name: signed_dt, type: STRING, description: "Oracle string YYYYMMDDHH24MISS (legacy)" }
-          - { name: status, type: STRING }
+          - { name: end_dt, type: STRING, description: "Oracle string YYYYMMDDHH24MISS (legacy)", source_type: STRING }
+          - { name: billing_model, type: STRING, source_type: STRING }
+          - { name: currency, type: STRING, source_type: STRING }
+          - { name: signed_dt, type: STRING, description: "Oracle string YYYYMMDDHH24MISS (legacy)", source_type: STRING }
+          - { name: status, type: STRING, source_type: STRING }
           - { name: load_date, type: DATE }
 
       - table: stg_crm_contract_line
@@ -126,9 +140,9 @@ suites:
           - { name: line_no, type: INT64, source_type: INT }
           - { name: service_code, type: STRING, source_type: STRING }
           - { name: uom, type: STRING, source_type: STRING }
-          - { name: unit_rate, type: NUMERIC, scale: 4 }
-          - { name: min_commit, type: NUMERIC, scale: 2 }
-          - { name: effective_dt, type: STRING, description: "Oracle string YYYYMMDDHH24MISS (legacy)" }
+          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
+          - { name: min_commit, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: effective_dt, type: STRING, description: "Oracle string YYYYMMDDHH24MISS (legacy)", source_type: STRING }
           - { name: load_date, type: DATE }
 
       - table: stg_crm_sla_target
@@ -140,9 +154,9 @@ suites:
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: queue_id, type: INT64, source_type: BIGINT }
           - { name: metric_code, type: STRING, source_type: STRING }
-          - { name: target_value, type: NUMERIC, scale: 4 }
-          - { name: penalty_pct, type: NUMERIC, scale: 2 }
-          - { name: effective_ts, type: INT64, description: "epoch SECONDS (legacy)" }
+          - { name: target_value, type: NUMERIC, scale: 4, source_type: DECIMAL(10,4) }
+          - { name: penalty_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: effective_ts, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
           - { name: load_date, type: DATE }
 
       - table: stg_hr_agent
@@ -159,8 +173,8 @@ suites:
           - { name: job_grade, type: STRING, source_type: STRING }
           - { name: employment_type, type: STRING, source_type: STRING }
           - { name: hire_ts, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: term_ts, type: INT64, description: "epoch SECONDS (legacy)" }
-          - { name: status, type: STRING }
+          - { name: term_ts, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
+          - { name: status, type: STRING, source_type: STRING }
           - { name: load_date, type: DATE }
 
       - table: stg_hr_org_unit
@@ -187,9 +201,9 @@ suites:
           - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: event_type, type: STRING, source_type: STRING }
           - { name: event_ts, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: from_org_unit_id, type: INT64 }
-          - { name: to_org_unit_id, type: INT64 }
-          - { name: reason_code, type: STRING }
+          - { name: from_org_unit_id, type: INT64, source_type: BIGINT }
+          - { name: to_org_unit_id, type: INT64, source_type: BIGINT }
+          - { name: reason_code, type: STRING, source_type: STRING }
           - { name: load_date, type: DATE }
 
       - table: stg_hr_skill
@@ -215,7 +229,7 @@ suites:
           - { name: proficiency, type: INT64, source_type: INT }
           - { name: certified, type: BOOL, source_type: BOOLEAN }
           - { name: effective_ts, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: expiry_ts, type: INT64, description: "epoch SECONDS (legacy)" }
+          - { name: expiry_ts, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
           - { name: load_date, type: DATE }
 
       - table: stg_wfm_shift
@@ -244,11 +258,11 @@ suites:
           - { name: shift_id, type: INT64, source_type: BIGINT }
           - { name: sched_date, type: STRING, source_type: STRING }
           - { name: start_epoch, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: end_epoch, type: INT64, description: "epoch SECONDS (legacy)" }
-          - { name: paid_minutes, type: INT64 }
-          - { name: activity_code, type: STRING }
+          - { name: end_epoch, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
+          - { name: paid_minutes, type: INT64, source_type: INT }
+          - { name: activity_code, type: STRING, source_type: STRING }
           - { name: load_date, type: DATE }
-          - { name: site_code, type: STRING }
+          - { name: site_code, type: STRING, source_type: STRING }
 
       - table: stg_wfm_adherence_event
         source_table: stg_wfm_adherence_event
@@ -260,8 +274,8 @@ suites:
           - { name: schedule_id, type: INT64, source_type: BIGINT }
           - { name: exception_type, type: STRING, source_type: STRING }
           - { name: start_epoch, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: end_epoch, type: INT64, description: "epoch SECONDS (legacy)" }
-          - { name: approved_flag, type: BOOL }
+          - { name: end_epoch, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
+          - { name: approved_flag, type: BOOL, source_type: BOOLEAN }
           - { name: load_date, type: DATE }
 
       - table: stg_wfm_forecast
@@ -272,9 +286,9 @@ suites:
           - { name: forecast_id, type: INT64, source_type: BIGINT }
           - { name: queue_id, type: INT64, source_type: BIGINT }
           - { name: interval_start_epoch, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: forecast_volume, type: INT64 }
-          - { name: forecast_aht_sec, type: INT64 }
-          - { name: required_fte, type: NUMERIC, scale: 2 }
+          - { name: forecast_volume, type: INT64, source_type: INT }
+          - { name: forecast_aht_sec, type: INT64, source_type: INT }
+          - { name: required_fte, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
           - { name: load_date, type: DATE }
 
       - table: stg_wfm_timeoff_request
@@ -285,10 +299,10 @@ suites:
           - { name: timeoff_id, type: INT64, source_type: BIGINT }
           - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: request_epoch, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: start_date, type: STRING }
-          - { name: end_date, type: STRING }
-          - { name: timeoff_type, type: STRING }
-          - { name: status, type: STRING }
+          - { name: start_date, type: STRING, source_type: STRING }
+          - { name: end_date, type: STRING, source_type: STRING }
+          - { name: timeoff_type, type: STRING, source_type: STRING }
+          - { name: status, type: STRING, source_type: STRING }
           - { name: load_date, type: DATE }
 
       - table: stg_tel_call
@@ -304,11 +318,11 @@ suites:
           - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: start_epoch, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: answer_epoch, type: INT64, description: "epoch SECONDS (legacy)" }
-          - { name: end_epoch, type: INT64, description: "epoch SECONDS (legacy)" }
-          - { name: disposition_code, type: STRING }
-          - { name: direction, type: STRING }
-          - { name: recording_id, type: STRING }
+          - { name: answer_epoch, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
+          - { name: end_epoch, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
+          - { name: disposition_code, type: STRING, source_type: STRING }
+          - { name: direction, type: STRING, source_type: STRING }
+          - { name: recording_id, type: STRING, source_type: STRING }
           - { name: load_date, type: DATE }
 
       - table: stg_tel_call_segment
@@ -321,8 +335,8 @@ suites:
           - { name: segment_no, type: INT64, source_type: INT }
           - { name: segment_type, type: STRING, source_type: STRING }
           - { name: start_epoch, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: end_epoch, type: INT64, description: "epoch SECONDS (legacy)" }
-          - { name: agent_id, type: INT64 }
+          - { name: end_epoch, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
+          - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: load_date, type: DATE }
 
       - table: stg_tel_queue
@@ -348,8 +362,8 @@ suites:
           - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: state_code, type: STRING, source_type: STRING }
           - { name: start_epoch, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: end_epoch, type: INT64, description: "epoch SECONDS (legacy)" }
-          - { name: reason_code, type: STRING }
+          - { name: end_epoch, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
+          - { name: reason_code, type: STRING, source_type: STRING }
           - { name: load_date, type: DATE }
 
       - table: stg_tel_disposition_code
@@ -379,7 +393,7 @@ suites:
           - { name: priority, type: STRING, source_type: STRING }
           - { name: status, type: STRING, source_type: STRING }
           - { name: created_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: updated_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
+          - { name: updated_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
           - { name: load_date, type: DATE }
 
       - table: stg_tkt_ticket_event
@@ -391,9 +405,9 @@ suites:
           - { name: ticket_id, type: INT64, source_type: BIGINT }
           - { name: event_type, type: STRING, source_type: STRING }
           - { name: event_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: actor_agent_id, type: INT64 }
-          - { name: old_value, type: STRING }
-          - { name: new_value, type: STRING }
+          - { name: actor_agent_id, type: INT64, source_type: BIGINT }
+          - { name: old_value, type: STRING, source_type: STRING }
+          - { name: new_value, type: STRING, source_type: STRING }
           - { name: load_date, type: DATE }
 
       - table: stg_tkt_category
@@ -421,8 +435,8 @@ suites:
           - { name: issued_ts_sec, type: INT64, source_type: BIGINT, description: "!! name says seconds, VALUES ARE MILLIS !!" }
           - { name: due_ts_sec, type: INT64, source_type: BIGINT, description: "!! name says seconds, VALUES ARE MILLIS !!" }
           - { name: currency, type: STRING, source_type: STRING }
-          - { name: total_amount, type: NUMERIC, scale: 2 }
-          - { name: status, type: STRING }
+          - { name: total_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: status, type: STRING, source_type: STRING }
           - { name: load_date, type: DATE }
 
       - table: stg_fin_invoice_line
@@ -433,11 +447,11 @@ suites:
           - { name: invoice_line_id, type: INT64, source_type: BIGINT }
           - { name: invoice_id, type: INT64, source_type: BIGINT }
           - { name: contract_line_id, type: INT64, source_type: BIGINT }
-          - { name: qty, type: NUMERIC, scale: 2 }
-          - { name: unit_rate, type: NUMERIC, scale: 4 }
-          - { name: line_amount, type: NUMERIC, scale: 2 }
-          - { name: adjustment_flag, type: BOOL }
-          - { name: created_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
+          - { name: qty, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
+          - { name: line_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: adjustment_flag, type: BOOL, source_type: BOOLEAN }
+          - { name: created_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
           - { name: load_date, type: DATE }
 
       - table: stg_fin_rate_card
@@ -448,10 +462,10 @@ suites:
           - { name: rate_card_id, type: INT64, source_type: BIGINT }
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: service_code, type: STRING, source_type: STRING }
-          - { name: rate, type: NUMERIC, scale: 4 }
-          - { name: currency, type: STRING }
-          - { name: effective_ts, type: INT64, description: "epoch SECONDS (legacy)" }
-          - { name: expiry_ts, type: INT64, description: "epoch SECONDS (legacy)" }
+          - { name: rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
+          - { name: currency, type: STRING, source_type: STRING }
+          - { name: effective_ts, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
+          - { name: expiry_ts, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
           - { name: load_date, type: DATE }
 
       - table: stg_fin_timesheet_delta
@@ -479,9 +493,9 @@ suites:
           - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: period_month, type: STRING, source_type: STRING }
           - { name: adj_type, type: STRING, source_type: STRING }
-          - { name: amount, type: NUMERIC, scale: 2 }
-          - { name: op, type: STRING }
-          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
+          - { name: amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: op, type: STRING, source_type: STRING }
+          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
           - { name: extract_ts, type: DATE }
 
       - table: stg_crm_sla_credit_delta
@@ -493,10 +507,10 @@ suites:
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: sla_target_id, type: INT64, source_type: BIGINT }
           - { name: period_month, type: STRING, source_type: STRING }
-          - { name: credit_amount, type: NUMERIC, scale: 2 }
-          - { name: reason, type: STRING }
-          - { name: op, type: STRING }
-          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
+          - { name: credit_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: reason, type: STRING, source_type: STRING }
+          - { name: op, type: STRING, source_type: STRING }
+          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
           - { name: extract_ts, type: DATE }
 
       - table: stg_tel_callback_request_delta
@@ -508,10 +522,10 @@ suites:
           - { name: call_id, type: INT64, source_type: BIGINT }
           - { name: queue_id, type: INT64, source_type: BIGINT }
           - { name: requested_epoch, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: scheduled_epoch, type: INT64, description: "epoch SECONDS (legacy)" }
-          - { name: completed_flag, type: BOOL }
-          - { name: op, type: STRING }
-          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
+          - { name: scheduled_epoch, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
+          - { name: completed_flag, type: BOOL, source_type: BOOLEAN }
+          - { name: op, type: STRING, source_type: STRING }
+          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
           - { name: extract_ts, type: DATE }
 
       - table: stg_wfm_shift_swap_delta
@@ -539,9 +553,9 @@ suites:
           - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: minutes_logged, type: INT64, source_type: INT }
           - { name: log_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: note, type: STRING }
-          - { name: op, type: STRING }
-          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
+          - { name: note, type: STRING, source_type: STRING }
+          - { name: op, type: STRING, source_type: STRING }
+          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
           - { name: extract_ts, type: DATE }
 
       - table: stg_hr_attrition_event_delta
@@ -552,12 +566,12 @@ suites:
           - { name: attrition_event_id, type: INT64, source_type: BIGINT }
           - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: notice_epoch, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
-          - { name: last_day, type: STRING }
-          - { name: attrition_type, type: STRING }
-          - { name: reason_code, type: STRING }
-          - { name: regrettable_flag, type: BOOL }
-          - { name: op, type: STRING }
-          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
+          - { name: last_day, type: STRING, source_type: STRING }
+          - { name: attrition_type, type: STRING, source_type: STRING }
+          - { name: reason_code, type: STRING, source_type: STRING }
+          - { name: regrettable_flag, type: BOOL, source_type: BOOLEAN }
+          - { name: op, type: STRING, source_type: STRING }
+          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
           - { name: extract_ts, type: DATE }
 
       - table: stg_fin_rate_card_change_delta
@@ -567,11 +581,11 @@ suites:
         columns:
           - { name: rate_change_id, type: INT64, source_type: BIGINT }
           - { name: rate_card_id, type: INT64, source_type: BIGINT }
-          - { name: old_rate, type: NUMERIC, scale: 4 }
-          - { name: new_rate, type: NUMERIC, scale: 4 }
-          - { name: change_reason, type: STRING }
-          - { name: op, type: STRING }
-          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
+          - { name: old_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
+          - { name: new_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
+          - { name: change_reason, type: STRING, source_type: STRING }
+          - { name: op, type: STRING, source_type: STRING }
+          - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
           - { name: extract_ts, type: DATE }
 
       - table: stg_file_interaction_export
@@ -585,10 +599,10 @@ suites:
           - { name: client_interaction_id, type: STRING, source_type: STRING }
           - { name: agent_email, type: STRING, source_type: STRING }
           - { name: start_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: end_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
-          - { name: outcome, type: STRING }
-          - { name: customer_ref, type: STRING }
-          - { name: client_code, type: STRING }
+          - { name: end_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
+          - { name: outcome, type: STRING, source_type: STRING }
+          - { name: customer_ref, type: STRING, source_type: STRING }
+          - { name: client_code, type: STRING, source_type: STRING }
           - { name: feed_date, type: DATE }
 
       - table: stg_file_survey_csat
@@ -600,11 +614,11 @@ suites:
           - { name: survey_id, type: STRING, source_type: STRING }
           - { name: interaction_ref, type: STRING, source_type: STRING }
           - { name: survey_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: csat_score, type: INT64 }
-          - { name: nps_score, type: INT64 }
-          - { name: fcr_claimed, type: BOOL }
-          - { name: verbatim, type: STRING }
-          - { name: client_code, type: STRING }
+          - { name: csat_score, type: INT64, source_type: INT }
+          - { name: nps_score, type: INT64, source_type: INT }
+          - { name: fcr_claimed, type: BOOL, source_type: BOOLEAN }
+          - { name: verbatim, type: STRING, source_type: STRING }
+          - { name: client_code, type: STRING, source_type: STRING }
           - { name: feed_date, type: DATE }
 
       - table: stg_file_qa_forms
@@ -617,11 +631,11 @@ suites:
           - { name: interaction_ref, type: STRING, source_type: STRING }
           - { name: evaluator_email, type: STRING, source_type: STRING }
           - { name: evaluated_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: form_version, type: STRING }
-          - { name: sections, type: "ARRAY<STRUCT<section_code STRING, max_points INT64, scored_points INT64>>" }
-          - { name: auto_fail, type: BOOL }
-          - { name: overall_pct, type: NUMERIC, scale: 2 }
-          - { name: client_code, type: STRING }
+          - { name: form_version, type: STRING, source_type: STRING }
+          - { name: sections, type: "ARRAY<STRUCT<section_code STRING, max_points INT64, scored_points INT64>>", source_type: "ARRAY<STRUCT<section_code:STRING,max_points:INT,scored_points:INT>>" }
+          - { name: auto_fail, type: BOOL, source_type: BOOLEAN }
+          - { name: overall_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: client_code, type: STRING, source_type: STRING }
           - { name: feed_date, type: DATE }
 
       - table: stg_file_ivr_logs
@@ -631,11 +645,11 @@ suites:
         cluster_by: [client_code]
         columns:
           - { name: event_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: session_ref, type: STRING }
-          - { name: menu_path, type: STRING }
-          - { name: key_pressed, type: STRING }
-          - { name: raw_tail, type: STRING }
-          - { name: client_code, type: STRING }
+          - { name: session_ref, type: STRING, source_type: STRING }
+          - { name: menu_path, type: STRING, source_type: STRING }
+          - { name: key_pressed, type: STRING, source_type: STRING }
+          - { name: raw_tail, type: STRING, source_type: STRING }
+          - { name: client_code, type: STRING, source_type: STRING }
           - { name: feed_date, type: DATE }
 
       - table: stg_file_chat_transcripts
@@ -648,10 +662,10 @@ suites:
           - { name: queue_code, type: STRING, source_type: STRING }
           - { name: agent_email, type: STRING, source_type: STRING }
           - { name: started_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: ended_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
-          - { name: messages, type: "ARRAY<STRUCT<sender STRING, ts_ms INT64, text STRING>>" }
-          - { name: metadata, type: "ARRAY<STRUCT<key STRING, value STRING>>" }
-          - { name: client_code, type: STRING }
+          - { name: ended_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
+          - { name: messages, type: "ARRAY<STRUCT<sender STRING, ts_ms INT64, text STRING>>", source_type: "ARRAY<STRUCT<sender:STRING,ts_ms:BIGINT,text:STRING>>" }
+          - { name: metadata, type: "ARRAY<STRUCT<key STRING, value STRING>>", source_type: "MAP<STRING,STRING>" }
+          - { name: client_code, type: STRING, source_type: STRING }
           - { name: feed_date, type: DATE }
 
       - table: stg_file_roster
@@ -666,7 +680,7 @@ suites:
           - { name: role_on_program, type: STRING, source_type: STRING }
           - { name: active_flag, type: BOOL, source_type: BOOLEAN }
           - { name: as_of_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: client_code, type: STRING }
+          - { name: client_code, type: STRING, source_type: STRING }
           - { name: feed_date, type: DATE }
 
       - table: stg_file_telco_invoice
@@ -679,10 +693,10 @@ suites:
           - { name: carrier, type: STRING, source_type: STRING }
           - { name: circuit_id, type: STRING, source_type: STRING }
           - { name: usage_minutes, type: INT64, source_type: BIGINT }
-          - { name: charge_amount, type: NUMERIC, scale: 2 }
-          - { name: bill_period, type: STRING }
-          - { name: billed_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
-          - { name: client_code, type: STRING }
+          - { name: charge_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: bill_period, type: STRING, source_type: STRING }
+          - { name: billed_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
+          - { name: client_code, type: STRING, source_type: STRING }
           - { name: feed_date, type: DATE }
 
       - table: stg_file_dialer_result
@@ -696,9 +710,9 @@ suites:
           - { name: phone_hash, type: STRING, source_type: STRING }
           - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: attempt_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: result_code, type: STRING }
-          - { name: talk_seconds, type: INT64 }
-          - { name: client_code, type: STRING }
+          - { name: result_code, type: STRING, source_type: STRING }
+          - { name: talk_seconds, type: INT64, source_type: INT }
+          - { name: client_code, type: STRING, source_type: STRING }
           - { name: feed_date, type: DATE }
 
       - table: stg_file_email_interaction
@@ -711,10 +725,10 @@ suites:
           - { name: mailbox, type: STRING, source_type: STRING }
           - { name: agent_email, type: STRING, source_type: STRING }
           - { name: received_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: first_reply_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
-          - { name: resolved_ms, type: INT64, description: "epoch MILLISECONDS (legacy)" }
-          - { name: subject_category, type: STRING }
-          - { name: client_code, type: STRING }
+          - { name: first_reply_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
+          - { name: resolved_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
+          - { name: subject_category, type: STRING, source_type: STRING }
+          - { name: client_code, type: STRING, source_type: STRING }
           - { name: feed_date, type: DATE }
 
       - table: stg_file_speech_analytics
@@ -726,11 +740,11 @@ suites:
           - { name: recording_id, type: STRING, source_type: STRING }
           - { name: call_ref, type: STRING, source_type: STRING }
           - { name: analyzed_ms, type: INT64, source_type: BIGINT, description: "epoch MILLISECONDS (legacy)" }
-          - { name: sentiment_score, type: FLOAT64 }
-          - { name: silence_pct, type: FLOAT64 }
-          - { name: talk_over_count, type: INT64 }
-          - { name: keywords, type: "ARRAY<STRING>" }
-          - { name: client_code, type: STRING }
+          - { name: sentiment_score, type: FLOAT64, source_type: DOUBLE }
+          - { name: silence_pct, type: FLOAT64, source_type: DOUBLE }
+          - { name: talk_over_count, type: INT64, source_type: INT }
+          - { name: keywords, type: "ARRAY<STRING>", source_type: "ARRAY<STRING>" }
+          - { name: client_code, type: STRING, source_type: STRING }
           - { name: feed_date, type: DATE }
 
   # ===========================================================================
@@ -790,9 +804,9 @@ suites:
           - { name: line_no, type: INT64, source_type: INT }
           - { name: service_code, type: STRING, source_type: STRING }
           - { name: uom, type: STRING, source_type: STRING }
-          - { name: unit_rate, type: NUMERIC, scale: 4 }
-          - { name: min_commit, type: NUMERIC, scale: 2 }
-          - { name: effective_ts, type: TIMESTAMP }
+          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
+          - { name: min_commit, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: effective_ts, type: TIMESTAMP, source_type: TIMESTAMP }
           - { name: snapshot_date, type: DATE }
 
       - table: ods_org_unit
@@ -965,7 +979,7 @@ suites:
           - { name: scored_points, type: INT64, source_type: INT }
           - { name: max_points, type: INT64, source_type: INT }
           - { name: auto_fail, type: BOOL, source_type: BOOLEAN }
-          - { name: overall_pct, type: NUMERIC, scale: 2 }
+          - { name: overall_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
           - { name: event_date, type: DATE }
 
       - table: ods_interaction
@@ -1027,9 +1041,9 @@ suites:
           - { name: adjustment_id, type: INT64, source_type: BIGINT }
           - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: adj_type, type: STRING, source_type: STRING }
-          - { name: amount, type: NUMERIC, scale: 2 }
-          - { name: last_change_ts, type: TIMESTAMP }
-          - { name: period_month, type: STRING }
+          - { name: amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: last_change_ts, type: TIMESTAMP, source_type: TIMESTAMP }
+          - { name: period_month, type: STRING, source_type: STRING }
 
       - table: ods_sla_credit
         source_table: ods_sla_credit
@@ -1039,10 +1053,10 @@ suites:
           - { name: sla_credit_id, type: INT64, source_type: BIGINT }
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: sla_target_id, type: INT64, source_type: BIGINT }
-          - { name: credit_amount, type: NUMERIC, scale: 2 }
-          - { name: reason, type: STRING }
-          - { name: last_change_ts, type: TIMESTAMP }
-          - { name: period_month, type: STRING }
+          - { name: credit_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: reason, type: STRING, source_type: STRING }
+          - { name: last_change_ts, type: TIMESTAMP, source_type: TIMESTAMP }
+          - { name: period_month, type: STRING, source_type: STRING }
 
       - table: ods_callback_request
         source_table: ods_callback_request
@@ -1109,12 +1123,12 @@ suites:
           - { name: rate_card_id, type: INT64, source_type: BIGINT }
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: service_code, type: STRING, source_type: STRING }
-          - { name: rate, type: NUMERIC, scale: 4 }
-          - { name: currency, type: STRING }
-          - { name: effective_ts, type: TIMESTAMP }
-          - { name: expiry_ts, type: TIMESTAMP }
-          - { name: last_change_ts, type: TIMESTAMP }
-          - { name: snapshot_date, type: STRING }
+          - { name: rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
+          - { name: currency, type: STRING, source_type: STRING }
+          - { name: effective_ts, type: TIMESTAMP, source_type: TIMESTAMP }
+          - { name: expiry_ts, type: TIMESTAMP, source_type: TIMESTAMP }
+          - { name: last_change_ts, type: TIMESTAMP, source_type: TIMESTAMP }
+          - { name: snapshot_date, type: STRING, source_type: STRING }
 
       - table: ods_agent_scd2
         source_table: ods_agent_scd2
@@ -1226,8 +1240,8 @@ suites:
           - { name: issued_ts, type: TIMESTAMP, source_type: TIMESTAMP }
           - { name: due_ts, type: TIMESTAMP, source_type: TIMESTAMP }
           - { name: currency, type: STRING, source_type: STRING }
-          - { name: total_amount, type: NUMERIC, scale: 2 }
-          - { name: status, type: STRING }
+          - { name: total_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: status, type: STRING, source_type: STRING }
 
   # ===========================================================================
   # Suite 3: DM (25 tables + 15 views = 40 objects)
@@ -1421,8 +1435,8 @@ suites:
           - { name: abandoned, type: INT64, source_type: INT }
           - { name: answered_in_sl, type: INT64, source_type: INT }
           - { name: sl_threshold_sec, type: INT64, source_type: INT }
-          - { name: avg_speed_answer_sec, type: NUMERIC, scale: 2 }
-          - { name: avg_handle_sec, type: NUMERIC, scale: 2 }
+          - { name: avg_speed_answer_sec, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
+          - { name: avg_handle_sec, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
           - { name: date_key, type: DATE }
 
       - table: fact_csat_survey
@@ -1455,8 +1469,8 @@ suites:
           - { name: evaluated_ts, type: TIMESTAMP, source_type: TIMESTAMP }
           - { name: scored_points, type: INT64, source_type: INT }
           - { name: max_points, type: INT64, source_type: INT }
-          - { name: overall_pct, type: NUMERIC, scale: 2 }
-          - { name: auto_fail, type: BOOL }
+          - { name: overall_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: auto_fail, type: BOOL, source_type: BOOLEAN }
           - { name: date_key, type: DATE }
 
       - table: fact_billing_line
@@ -1470,11 +1484,11 @@ suites:
           - { name: client_sk, type: INT64, source_type: BIGINT }
           - { name: program_sk, type: INT64, source_type: BIGINT }
           - { name: service_code, type: STRING, source_type: STRING }
-          - { name: qty, type: NUMERIC, scale: 2 }
-          - { name: unit_rate, type: NUMERIC, scale: 4 }
-          - { name: line_amount, type: NUMERIC, scale: 2 }
-          - { name: adjustment_flag, type: BOOL }
-          - { name: invoice_status, type: STRING }
+          - { name: qty, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
+          - { name: line_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: adjustment_flag, type: BOOL, source_type: BOOLEAN }
+          - { name: invoice_status, type: STRING, source_type: STRING }
           - { name: period_month, type: DATE }
 
       - table: fact_adherence_daily
@@ -1488,8 +1502,8 @@ suites:
           - { name: worked_minutes, type: INT64, source_type: INT }
           - { name: exception_minutes, type: INT64, source_type: INT }
           - { name: timeoff_minutes, type: INT64, source_type: INT }
-          - { name: adherence_pct, type: NUMERIC, scale: 2 }
-          - { name: occupancy_pct, type: NUMERIC, scale: 2 }
+          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: occupancy_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
           - { name: date_key, type: DATE }
 
       - table: fact_ticket
@@ -1535,12 +1549,12 @@ suites:
           - { name: agent_sk, type: INT64, source_type: BIGINT }
           - { name: site_code, type: STRING, source_type: STRING }
           - { name: interactions_handled, type: INT64, source_type: INT }
-          - { name: avg_handle_seconds, type: NUMERIC, scale: 2 }
-          - { name: talk_seconds, type: INT64 }
-          - { name: acw_seconds, type: INT64 }
-          - { name: aux_seconds, type: INT64 }
-          - { name: adherence_pct, type: NUMERIC, scale: 2 }
-          - { name: occupancy_pct, type: NUMERIC, scale: 2 }
+          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
+          - { name: talk_seconds, type: INT64, source_type: BIGINT }
+          - { name: acw_seconds, type: INT64, source_type: BIGINT }
+          - { name: aux_seconds, type: INT64, source_type: BIGINT }
+          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: occupancy_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
           - { name: date_key, type: DATE }
 
       - table: agg_agent_weekly
@@ -1553,9 +1567,9 @@ suites:
           - { name: site_code, type: STRING, source_type: STRING }
           - { name: days_worked, type: INT64, source_type: INT }
           - { name: interactions_handled, type: INT64, source_type: INT }
-          - { name: avg_handle_seconds, type: NUMERIC, scale: 2 }
-          - { name: adherence_pct, type: NUMERIC, scale: 2 }
-          - { name: occupancy_pct, type: NUMERIC, scale: 2 }
+          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
+          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: occupancy_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
           - { name: week_start_key, type: DATE }
 
       - table: agg_program_monthly
@@ -1568,10 +1582,10 @@ suites:
           - { name: program_sk, type: INT64, source_type: BIGINT }
           - { name: line_of_business, type: STRING, source_type: STRING }
           - { name: interactions, type: INT64, source_type: BIGINT }
-          - { name: avg_handle_seconds, type: NUMERIC, scale: 2 }
-          - { name: avg_csat, type: NUMERIC, scale: 2 }
-          - { name: billed_amount, type: NUMERIC, scale: 2 }
-          - { name: grouping_level, type: INT64 }
+          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
+          - { name: avg_csat, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: billed_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: grouping_level, type: INT64, source_type: INT }
           - { name: period_month, type: DATE }
 
       - table: agg_queue_hourly
@@ -1585,9 +1599,9 @@ suites:
           - { name: offered, type: INT64, source_type: INT }
           - { name: answered, type: INT64, source_type: INT }
           - { name: abandoned, type: INT64, source_type: INT }
-          - { name: sl_pct, type: NUMERIC, scale: 2 }
-          - { name: forecast_volume, type: INT64 }
-          - { name: volume_variance_pct, type: NUMERIC, scale: 2 }
+          - { name: sl_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: forecast_volume, type: INT64, source_type: INT }
+          - { name: volume_variance_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(7,2) }
           - { name: date_key, type: DATE }
 
       - table: agg_csat_rollup_monthly
@@ -1600,10 +1614,10 @@ suites:
           - { name: program_sk, type: INT64, source_type: BIGINT }
           - { name: site_code, type: STRING, source_type: STRING }
           - { name: surveys, type: INT64, source_type: BIGINT }
-          - { name: avg_csat, type: NUMERIC, scale: 2 }
-          - { name: pct_promoters, type: NUMERIC, scale: 2 }
-          - { name: pct_detractors, type: NUMERIC, scale: 2 }
-          - { name: grouping_id, type: INT64 }
+          - { name: avg_csat, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: pct_promoters, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: pct_detractors, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: grouping_id, type: INT64, source_type: INT }
           - { name: period_month, type: DATE }
 
       - table: agg_billing_monthly
@@ -1614,10 +1628,10 @@ suites:
         columns:
           - { name: client_sk, type: INT64, source_type: BIGINT }
           - { name: program_sk, type: INT64, source_type: BIGINT }
-          - { name: billed_amount, type: NUMERIC, scale: 2 }
-          - { name: sla_credit_amount, type: NUMERIC, scale: 2 }
-          - { name: telco_cost_amount, type: NUMERIC, scale: 2 }
-          - { name: net_revenue, type: NUMERIC, scale: 2 }
+          - { name: billed_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: sla_credit_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: telco_cost_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: net_revenue, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
           - { name: period_month, type: DATE }
 
       - table: agg_site_daily
@@ -1629,9 +1643,9 @@ suites:
           - { name: site_code, type: STRING, source_type: STRING }
           - { name: agents_active, type: INT64, source_type: INT }
           - { name: interactions, type: INT64, source_type: BIGINT }
-          - { name: avg_handle_seconds, type: NUMERIC, scale: 2 }
-          - { name: sl_pct, type: NUMERIC, scale: 2 }
-          - { name: adherence_pct, type: NUMERIC, scale: 2 }
+          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
+          - { name: sl_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
           - { name: date_key, type: DATE }
 
       - table: vw_org_hierarchy
