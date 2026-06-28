@@ -140,8 +140,8 @@ suites:
           - { name: line_no, type: INT64, source_type: INT }
           - { name: service_code, type: STRING, source_type: STRING }
           - { name: uom, type: STRING, source_type: STRING }
-          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
-          - { name: min_commit, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: "DECIMAL(12,4)" }
+          - { name: min_commit, type: NUMERIC, scale: 2, source_type: "DECIMAL(12,2)" }
           - { name: effective_dt, type: STRING, description: "Oracle string YYYYMMDDHH24MISS (legacy)", source_type: STRING }
           - { name: load_date, type: DATE }
 
@@ -154,8 +154,8 @@ suites:
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: queue_id, type: INT64, source_type: BIGINT }
           - { name: metric_code, type: STRING, source_type: STRING }
-          - { name: target_value, type: NUMERIC, scale: 4, source_type: DECIMAL(10,4) }
-          - { name: penalty_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: target_value, type: NUMERIC, scale: 4, source_type: "DECIMAL(10,4)" }
+          - { name: penalty_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
           - { name: effective_ts, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
           - { name: load_date, type: DATE }
 
@@ -288,7 +288,7 @@ suites:
           - { name: interval_start_epoch, type: INT64, source_type: BIGINT, description: "epoch SECONDS (legacy)" }
           - { name: forecast_volume, type: INT64, source_type: INT }
           - { name: forecast_aht_sec, type: INT64, source_type: INT }
-          - { name: required_fte, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
+          - { name: required_fte, type: NUMERIC, scale: 2, source_type: "DECIMAL(8,2)" }
           - { name: load_date, type: DATE }
 
       - table: stg_wfm_timeoff_request
@@ -435,7 +435,7 @@ suites:
           - { name: issued_ts_sec, type: INT64, source_type: BIGINT, description: "!! name says seconds, VALUES ARE MILLIS !!" }
           - { name: due_ts_sec, type: INT64, source_type: BIGINT, description: "!! name says seconds, VALUES ARE MILLIS !!" }
           - { name: currency, type: STRING, source_type: STRING }
-          - { name: total_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: total_amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(14,2)" }
           - { name: status, type: STRING, source_type: STRING }
           - { name: load_date, type: DATE }
 
@@ -447,9 +447,9 @@ suites:
           - { name: invoice_line_id, type: INT64, source_type: BIGINT }
           - { name: invoice_id, type: INT64, source_type: BIGINT }
           - { name: contract_line_id, type: INT64, source_type: BIGINT }
-          - { name: qty, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
-          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
-          - { name: line_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: qty, type: NUMERIC, scale: 2, source_type: "DECIMAL(12,2)" }
+          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: "DECIMAL(12,4)" }
+          - { name: line_amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(14,2)" }
           - { name: adjustment_flag, type: BOOL, source_type: BOOLEAN }
           - { name: created_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
           - { name: load_date, type: DATE }
@@ -462,7 +462,7 @@ suites:
           - { name: rate_card_id, type: INT64, source_type: BIGINT }
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: service_code, type: STRING, source_type: STRING }
-          - { name: rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
+          - { name: rate, type: NUMERIC, scale: 4, source_type: "DECIMAL(12,4)" }
           - { name: currency, type: STRING, source_type: STRING }
           - { name: effective_ts, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
           - { name: expiry_ts, type: INT64, description: "epoch SECONDS (legacy)", source_type: BIGINT }
@@ -493,7 +493,7 @@ suites:
           - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: period_month, type: STRING, source_type: STRING }
           - { name: adj_type, type: STRING, source_type: STRING }
-          - { name: amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(12,2)" }
           - { name: op, type: STRING, source_type: STRING }
           - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
           - { name: extract_ts, type: DATE }
@@ -507,7 +507,7 @@ suites:
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: sla_target_id, type: INT64, source_type: BIGINT }
           - { name: period_month, type: STRING, source_type: STRING }
-          - { name: credit_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: credit_amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(12,2)" }
           - { name: reason, type: STRING, source_type: STRING }
           - { name: op, type: STRING, source_type: STRING }
           - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
@@ -581,8 +581,8 @@ suites:
         columns:
           - { name: rate_change_id, type: INT64, source_type: BIGINT }
           - { name: rate_card_id, type: INT64, source_type: BIGINT }
-          - { name: old_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
-          - { name: new_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
+          - { name: old_rate, type: NUMERIC, scale: 4, source_type: "DECIMAL(12,4)" }
+          - { name: new_rate, type: NUMERIC, scale: 4, source_type: "DECIMAL(12,4)" }
           - { name: change_reason, type: STRING, source_type: STRING }
           - { name: op, type: STRING, source_type: STRING }
           - { name: change_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
@@ -634,7 +634,7 @@ suites:
           - { name: form_version, type: STRING, source_type: STRING }
           - { name: sections, type: "ARRAY<STRUCT<section_code STRING, max_points INT64, scored_points INT64>>", source_type: "ARRAY<STRUCT<section_code:STRING,max_points:INT,scored_points:INT>>" }
           - { name: auto_fail, type: BOOL, source_type: BOOLEAN }
-          - { name: overall_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: overall_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
           - { name: client_code, type: STRING, source_type: STRING }
           - { name: feed_date, type: DATE }
 
@@ -693,7 +693,7 @@ suites:
           - { name: carrier, type: STRING, source_type: STRING }
           - { name: circuit_id, type: STRING, source_type: STRING }
           - { name: usage_minutes, type: INT64, source_type: BIGINT }
-          - { name: charge_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: charge_amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(12,2)" }
           - { name: bill_period, type: STRING, source_type: STRING }
           - { name: billed_ms, type: INT64, description: "epoch MILLISECONDS (legacy)", source_type: BIGINT }
           - { name: client_code, type: STRING, source_type: STRING }
@@ -804,8 +804,8 @@ suites:
           - { name: line_no, type: INT64, source_type: INT }
           - { name: service_code, type: STRING, source_type: STRING }
           - { name: uom, type: STRING, source_type: STRING }
-          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
-          - { name: min_commit, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: "DECIMAL(12,4)" }
+          - { name: min_commit, type: NUMERIC, scale: 2, source_type: "DECIMAL(12,2)" }
           - { name: effective_ts, type: TIMESTAMP, source_type: TIMESTAMP }
           - { name: snapshot_date, type: DATE }
 
@@ -979,7 +979,7 @@ suites:
           - { name: scored_points, type: INT64, source_type: INT }
           - { name: max_points, type: INT64, source_type: INT }
           - { name: auto_fail, type: BOOL, source_type: BOOLEAN }
-          - { name: overall_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: overall_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
           - { name: event_date, type: DATE }
 
       - table: ods_interaction
@@ -1041,7 +1041,7 @@ suites:
           - { name: adjustment_id, type: INT64, source_type: BIGINT }
           - { name: agent_id, type: INT64, source_type: BIGINT }
           - { name: adj_type, type: STRING, source_type: STRING }
-          - { name: amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(12,2)" }
           - { name: last_change_ts, type: TIMESTAMP, source_type: TIMESTAMP }
           - { name: period_month, type: STRING, source_type: STRING }
 
@@ -1053,7 +1053,7 @@ suites:
           - { name: sla_credit_id, type: INT64, source_type: BIGINT }
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: sla_target_id, type: INT64, source_type: BIGINT }
-          - { name: credit_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
+          - { name: credit_amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(12,2)" }
           - { name: reason, type: STRING, source_type: STRING }
           - { name: last_change_ts, type: TIMESTAMP, source_type: TIMESTAMP }
           - { name: period_month, type: STRING, source_type: STRING }
@@ -1123,7 +1123,7 @@ suites:
           - { name: rate_card_id, type: INT64, source_type: BIGINT }
           - { name: program_id, type: INT64, source_type: BIGINT }
           - { name: service_code, type: STRING, source_type: STRING }
-          - { name: rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
+          - { name: rate, type: NUMERIC, scale: 4, source_type: "DECIMAL(12,4)" }
           - { name: currency, type: STRING, source_type: STRING }
           - { name: effective_ts, type: TIMESTAMP, source_type: TIMESTAMP }
           - { name: expiry_ts, type: TIMESTAMP, source_type: TIMESTAMP }
@@ -1240,7 +1240,7 @@ suites:
           - { name: issued_ts, type: TIMESTAMP, source_type: TIMESTAMP }
           - { name: due_ts, type: TIMESTAMP, source_type: TIMESTAMP }
           - { name: currency, type: STRING, source_type: STRING }
-          - { name: total_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: total_amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(14,2)" }
           - { name: status, type: STRING, source_type: STRING }
 
   # ===========================================================================
@@ -1435,8 +1435,8 @@ suites:
           - { name: abandoned, type: INT64, source_type: INT }
           - { name: answered_in_sl, type: INT64, source_type: INT }
           - { name: sl_threshold_sec, type: INT64, source_type: INT }
-          - { name: avg_speed_answer_sec, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
-          - { name: avg_handle_sec, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
+          - { name: avg_speed_answer_sec, type: NUMERIC, scale: 2, source_type: "DECIMAL(8,2)" }
+          - { name: avg_handle_sec, type: NUMERIC, scale: 2, source_type: "DECIMAL(8,2)" }
           - { name: date_key, type: DATE }
 
       - table: fact_csat_survey
@@ -1469,7 +1469,7 @@ suites:
           - { name: evaluated_ts, type: TIMESTAMP, source_type: TIMESTAMP }
           - { name: scored_points, type: INT64, source_type: INT }
           - { name: max_points, type: INT64, source_type: INT }
-          - { name: overall_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: overall_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
           - { name: auto_fail, type: BOOL, source_type: BOOLEAN }
           - { name: date_key, type: DATE }
 
@@ -1484,9 +1484,9 @@ suites:
           - { name: client_sk, type: INT64, source_type: BIGINT }
           - { name: program_sk, type: INT64, source_type: BIGINT }
           - { name: service_code, type: STRING, source_type: STRING }
-          - { name: qty, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
-          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: DECIMAL(12,4) }
-          - { name: line_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: qty, type: NUMERIC, scale: 2, source_type: "DECIMAL(12,2)" }
+          - { name: unit_rate, type: NUMERIC, scale: 4, source_type: "DECIMAL(12,4)" }
+          - { name: line_amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(14,2)" }
           - { name: adjustment_flag, type: BOOL, source_type: BOOLEAN }
           - { name: invoice_status, type: STRING, source_type: STRING }
           - { name: period_month, type: DATE }
@@ -1502,8 +1502,8 @@ suites:
           - { name: worked_minutes, type: INT64, source_type: INT }
           - { name: exception_minutes, type: INT64, source_type: INT }
           - { name: timeoff_minutes, type: INT64, source_type: INT }
-          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
-          - { name: occupancy_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
+          - { name: occupancy_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
           - { name: date_key, type: DATE }
 
       - table: fact_ticket
@@ -1549,12 +1549,12 @@ suites:
           - { name: agent_sk, type: INT64, source_type: BIGINT }
           - { name: site_code, type: STRING, source_type: STRING }
           - { name: interactions_handled, type: INT64, source_type: INT }
-          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
+          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: "DECIMAL(8,2)" }
           - { name: talk_seconds, type: INT64, source_type: BIGINT }
           - { name: acw_seconds, type: INT64, source_type: BIGINT }
           - { name: aux_seconds, type: INT64, source_type: BIGINT }
-          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
-          - { name: occupancy_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
+          - { name: occupancy_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
           - { name: date_key, type: DATE }
 
       - table: agg_agent_weekly
@@ -1567,9 +1567,9 @@ suites:
           - { name: site_code, type: STRING, source_type: STRING }
           - { name: days_worked, type: INT64, source_type: INT }
           - { name: interactions_handled, type: INT64, source_type: INT }
-          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
-          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
-          - { name: occupancy_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: "DECIMAL(8,2)" }
+          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
+          - { name: occupancy_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
           - { name: week_start_key, type: DATE }
 
       - table: agg_program_monthly
@@ -1582,9 +1582,9 @@ suites:
           - { name: program_sk, type: INT64, source_type: BIGINT }
           - { name: line_of_business, type: STRING, source_type: STRING }
           - { name: interactions, type: INT64, source_type: BIGINT }
-          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
-          - { name: avg_csat, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
-          - { name: billed_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: "DECIMAL(8,2)" }
+          - { name: avg_csat, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
+          - { name: billed_amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(14,2)" }
           - { name: grouping_level, type: INT64, source_type: INT }
           - { name: period_month, type: DATE }
 
@@ -1599,9 +1599,9 @@ suites:
           - { name: offered, type: INT64, source_type: INT }
           - { name: answered, type: INT64, source_type: INT }
           - { name: abandoned, type: INT64, source_type: INT }
-          - { name: sl_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: sl_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
           - { name: forecast_volume, type: INT64, source_type: INT }
-          - { name: volume_variance_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(7,2) }
+          - { name: volume_variance_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(7,2)" }
           - { name: date_key, type: DATE }
 
       - table: agg_csat_rollup_monthly
@@ -1614,9 +1614,9 @@ suites:
           - { name: program_sk, type: INT64, source_type: BIGINT }
           - { name: site_code, type: STRING, source_type: STRING }
           - { name: surveys, type: INT64, source_type: BIGINT }
-          - { name: avg_csat, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
-          - { name: pct_promoters, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
-          - { name: pct_detractors, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: avg_csat, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
+          - { name: pct_promoters, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
+          - { name: pct_detractors, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
           - { name: grouping_id, type: INT64, source_type: INT }
           - { name: period_month, type: DATE }
 
@@ -1628,10 +1628,10 @@ suites:
         columns:
           - { name: client_sk, type: INT64, source_type: BIGINT }
           - { name: program_sk, type: INT64, source_type: BIGINT }
-          - { name: billed_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
-          - { name: sla_credit_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
-          - { name: telco_cost_amount, type: NUMERIC, scale: 2, source_type: DECIMAL(12,2) }
-          - { name: net_revenue, type: NUMERIC, scale: 2, source_type: DECIMAL(14,2) }
+          - { name: billed_amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(14,2)" }
+          - { name: sla_credit_amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(12,2)" }
+          - { name: telco_cost_amount, type: NUMERIC, scale: 2, source_type: "DECIMAL(12,2)" }
+          - { name: net_revenue, type: NUMERIC, scale: 2, source_type: "DECIMAL(14,2)" }
           - { name: period_month, type: DATE }
 
       - table: agg_site_daily
@@ -1643,9 +1643,9 @@ suites:
           - { name: site_code, type: STRING, source_type: STRING }
           - { name: agents_active, type: INT64, source_type: INT }
           - { name: interactions, type: INT64, source_type: BIGINT }
-          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: DECIMAL(8,2) }
-          - { name: sl_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
-          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: DECIMAL(5,2) }
+          - { name: avg_handle_seconds, type: NUMERIC, scale: 2, source_type: "DECIMAL(8,2)" }
+          - { name: sl_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
+          - { name: adherence_pct, type: NUMERIC, scale: 2, source_type: "DECIMAL(5,2)" }
           - { name: date_key, type: DATE }
 
       - table: vw_org_hierarchy
