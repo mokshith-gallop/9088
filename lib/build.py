@@ -29,26 +29,54 @@ LABEL_KEY = "dmt_ephemeral"
 # legacy DDL (the agent lists the files it converted), WITHOUT a live legacy DB and WITHOUT
 # ever touching a real one. Guarded by an opt-in env var so it can only run on a sandbox.
 SOURCE_SETUP_ENV = "DMT_SOURCE_SETUP"          # set ONLY for sandbox/test sources
-# Any cluster URI under a LOCATION (hdfs://, s3://, abfs://, gs://, file://host…) that won't
-# resolve on the sandbox — rewritten to a local base so EXTERNAL tables can be created.
+# Rehost legacy DDL onto OUR warehouse so it applies without the original cluster: rewrite any
+# off-cluster URI under LOCATION (hdfs://host/…, s3://…) to our warehouse base (table stays
+# EXTERNAL), and flip ACID tables to non-ACID.
 _LEGACY_URI_RE = re.compile(r"\b[a-z0-9]+://[^/'\s]+/", re.I)
+_ACID_RE = re.compile(r"('transactional'\s*=\s*)'true'", re.I)
 _SETUP_COMMENT_RE = re.compile(r"/\*.*?\*/|--[^\n]*", re.S)   # Hive/Impala comments ('#' is not one)
 _CREATE_TABLE_RE = re.compile(r"CREATE\s+(?:EXTERNAL\s+|TEMPORARY\s+)*TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([`\w.]+)", re.I)
 _CREATE_DB_RE = re.compile(r"CREATE\s+(?:DATABASE|SCHEMA)\s+(?:IF\s+NOT\s+EXISTS\s+)?([`\w]+)", re.I)
 
 
 def _sanitize_source_ddl(sql: str, location_base: str) -> str:
-    """Make legacy DDL applyable to a sandbox: rewrite any cluster URI under LOCATION
-    (hdfs://host/…, s3://…) to a local sandbox base. Keeps EXTERNAL so the table stays
-    non-transactional — a managed table on Hive 3 is ACID, which Impala cannot read."""
-    return _LEGACY_URI_RE.sub(location_base.rstrip("/") + "/", sql)
+    """Rehost legacy DDL onto OUR warehouse so it applies without the original cluster: rewrite any
+    off-cluster URI under LOCATION (hdfs://host/…, s3://…) to our warehouse base, keeping the table
+    EXTERNAL. Also flip ACID `'transactional'='true'` to `'false'` (our HS2 client cannot create
+    ACID; the schema — columns/types — is identical either way)."""
+    sql = _LEGACY_URI_RE.sub(location_base.rstrip("/") + "/", sql)   # repoint LOCATION → our warehouse
+    sql = _ACID_RE.sub(r"\1'false'", sql)                            # ACID → non-ACID
+    return sql
 
 
 def _split_statements(sql: str) -> list[str]:
-    """Strip comments FIRST (a legacy comment may itself contain ';'), then split into
-    individual statements, dropping blank fragments."""
+    """Strip comments, then split on TOP-LEVEL ';' — RESPECTING string literals, because a SerDe
+    property (e.g. a RegexSerDe `input.regex`) can itself contain ';'. A naive split shreds it."""
     clean = _SETUP_COMMENT_RE.sub("", sql)
-    return [p.strip() for p in clean.split(";") if p.strip()]
+    stmts: list[str] = []
+    buf: list[str] = []
+    quote = None
+    prev = ""
+    for ch in clean:
+        if quote:
+            buf.append(ch)
+            if ch == quote and prev != "\\":
+                quote = None
+        elif ch in ("'", '"'):
+            quote = ch
+            buf.append(ch)
+        elif ch == ";":
+            s = "".join(buf).strip()
+            if s:
+                stmts.append(s)
+            buf = []
+        else:
+            buf.append(ch)
+        prev = ch
+    tail = "".join(buf).strip()
+    if tail:
+        stmts.append(tail)
+    return stmts
 
 
 def setup_source(ctx, source_setup: dict, base_dir: str = ".") -> list[tuple[str, str]]:
@@ -59,7 +87,9 @@ def setup_source(ctx, source_setup: dict, base_dir: str = ".") -> list[tuple[str
     sees the tables. Returns the created ('database'|'table', name) objects for teardown."""
     if not os.environ.get(SOURCE_SETUP_ENV):
         return []
-    location_base = source_setup.get("location_base", "/tmp/dmt_src")
+    location_base = (source_setup.get("location_base")
+                     or os.environ.get("DMT_SOURCE_LOCATION_BASE")
+                     or "file:/user/hive/warehouse/external")   # our Hive warehouse (externals live here)
     created: list[tuple[str, str]] = []
     for path in source_setup.get("ddl", []):
         sql = _sanitize_source_ddl(expand_env((Path(base_dir) / path).read_text()), location_base)
